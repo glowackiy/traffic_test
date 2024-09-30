@@ -1,0 +1,106 @@
+Для создания модуля распределения пассажиропотока по различным видам транспорта в QGIS с использованием Python, вам нужно учесть несколько аспектов, включая входные данные, анализ, расчеты и визуализацию результатов. Вот общая структура и основные шаги для выполнения вашего задания:
+
+### 1. Входные данные
+- **Координаты объекта**: точка начала (например, координаты населенного пункта).
+- **Количество жителей**: фиксированное значение, например, 100 человек.
+- **Базовые слои**: данные по УДС, пешеходным дорожкам, остановкам НГПТ и СВТ, маршрутам общественного транспорта.
+
+### 2. Определение распределения пассажиропотока
+Вам нужно определить, как пассажиропоток будет распределяться между индивидуальным транспортом, НГПТ и СВТ. Примерное распределение можно использовать следующим образом:
+- **Индивидуальный транспорт**: 50%
+- **НГПТ**: 30%
+- **СВТ**: 20%
+
+Эти значения могут быть скорректированы в зависимости от конкретных условий, например, доступности транспорта, времени в пути и расстояний.
+
+### 3. Использование QGIS и Python
+Для реализации решения в QGIS с использованием Python выполните следующие шаги:
+
+#### 3.1 Установка необходимых библиотек
+Убедитесь, что у вас установлены следующие библиотеки:
+- **PyQGIS** (обычно предустановлен в QGIS)
+- **Geopandas** (для работы с геоданными)
+- **Shapely** (для работы с геометрией)
+
+#### 3.2 Загрузка данных
+Загрузите базовые слои и данные в QGIS с помощью Python. Например:
+```python
+import processing
+
+# Загрузка слоев
+udc_layer = QgsVectorLayer("path/to/udc_layer.shp", "UDC Layer", "ogr")
+pedestrian_layer = QgsVectorLayer("path/to/pedestrian_layer.shp", "Pedestrian Layer", "ogr")
+ngpt_layer = QgsVectorLayer("path/to/ngpt_layer.shp", "NGPT Layer", "ogr")
+svt_layer = QgsVectorLayer("path/to/svt_layer.shp", "SVT Layer", "ogr")
+
+QgsProject.instance().addMapLayer(udc_layer)
+QgsProject.instance().addMapLayer(pedestrian_layer)
+QgsProject.instance().addMapLayer(ngpt_layer)
+QgsProject.instance().addMapLayer(svt_layer)
+```
+
+#### 3.3 Поиск ближайших остановок
+Используйте методы поиска ближайших объектов, чтобы определить ближайшие остановки НГПТ и СВТ:
+```python
+def find_nearest_station(point, layer):
+    nearest_feature = None
+    min_distance = float('inf')
+    
+    for feature in layer.getFeatures():
+        distance = point.distance(feature.geometry())
+        if distance < min_distance:
+            min_distance = distance
+            nearest_feature = feature
+            
+    return nearest_feature, min_distance
+```
+
+#### 3.4 Расчет времени в пути
+Расчитайте время в пути до ближайших остановок на основе заданной скорости пешехода или транспорта. Например:
+```python
+def calculate_travel_time(distance, speed):
+    return distance / speed  # время в часах
+```
+
+#### 3.5 Распределение пассажиропотока
+С учетом процентного распределения, рассчитайте количество пассажиров для каждого вида транспорта:
+```python
+total_passengers = 100
+individual_transport = total_passengers * 0.5
+ngpt_transport = total_passengers * 0.3
+svt_transport = total_passengers * 0.2
+```
+
+#### 3.6 Визуализация результатов
+Выводите результаты на карту или в консоль, включая ближайшие остановки, расстояние и время в пути для каждого вида транспорта.
+
+### 4. Итог
+После выполнения всех шагов вы получите модуль, который будет рассчитывать распределение пассажиропотока и предоставлять информацию о ближайших остановках и времени в пути. 
+
+### Пример кода
+Вот пример, как может выглядеть итоговый код:
+```python
+# Основной код
+if __name__ == "__main__":
+    # Определите координаты объекта
+    point = QgsPointXY(lon, lat)  # Вставьте ваши координаты
+    
+    # Найдите ближайшие остановки
+    nearest_ngpt, ngpt_distance = find_nearest_station(point, ngpt_layer)
+    nearest_svt, svt_distance = find_nearest_station(point, svt_layer)
+
+    # Расчитайте время в пути
+    speed_pedestrian = 1.4  # м/с
+    ngpt_time = calculate_travel_time(ngpt_distance, speed_pedestrian)
+    svt_time = calculate_travel_time(svt_distance, speed_pedestrian)
+
+    # Распределите пассажиропоток
+    # ...
+
+    # Вывод результатов
+    print(f"Ближайшая остановка НГПТ: {nearest_ngpt['name']}, Расстояние: {ngpt_distance:.2f} м, Время в пути: {ngpt_time:.2f} ч")
+    print(f"Ближайшая остановка СВТ: {nearest_svt['name']}, Расстояние: {svt_distance:.2f} м, Время в пути: {svt_time:.2f} ч")
+```
+
+### Заключение
+Это общее руководство по созданию модуля для распределения пассажиропотока. Вам потребуется дополнительно настроить код в зависимости от ваших данных и условий.
